@@ -1,4 +1,5 @@
 const Joi = require('joi');
+const assert = require('assert')
 
 Feature('codeceptjs');
 
@@ -16,22 +17,22 @@ const testCases = [
         latitude: 56.637028,
         longitude: 47.8772,
         radius: 10000,
-        count: 5000,
+        count: 5000,                 // невалидное значение
         expectedCode: 400
     },
     {
         name: 'Негативный тест 2',
-        latitude: -156.637028,
-        longitude: -247.8772,
-        radius: 100000,
+        latitude: -156.637028,        // невалидное значение - вызывает 500 ошибку
+        longitude: -247.8772,         // невалидное значение - вызывает 500 ошибку
+        radius: 100000,               // невалидное значение - вызывает 500 ошибку
         count: 500,
         expectedCode: 500
     },
 ]
 
 testCases.forEach((testCase) => {
-    Scenario('Поиск средств размещений по окружности: ' + testCase.name, ({I}) => {
-        I.sendGetRequest(`/v1/properties/circle-search?latitude=${testCase.latitude}&longitude=${testCase.longitude}&radius=${testCase.radius}&count=${testCase.count}`);
+    Scenario('Поиск средств размещений по окружности: ' + testCase.name, async ({I}) => {
+        const response = await I.sendGetRequest(`/v1/properties/circle-search?latitude=${testCase.latitude}&longitude=${testCase.longitude}&radius=${testCase.radius}&count=${testCase.count}`);
 
         I.seeResponseCodeIs(testCase.expectedCode);
 
@@ -67,6 +68,9 @@ testCases.forEach((testCase) => {
             });
 
             I.seeResponseMatchesJsonSchema(schema);
+
+            assert.equal(response.data.errors.length, 1, 'Количество невалидных параметров ' +
+                'не соответствует количеству ошибок, возвращенных с бэкенда')    // Только один невалидный параметр count
         }
     });
 })
